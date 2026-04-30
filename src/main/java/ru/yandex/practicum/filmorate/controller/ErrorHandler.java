@@ -14,25 +14,26 @@ import java.util.Map;
 @RestControllerAdvice
 @Slf4j
 public class ErrorHandler {
+    private static final String ERROR_KEY = "error";
 
     @ExceptionHandler({ValidationException.class, MethodArgumentNotValidException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, String> handleValidation(final Exception e) {
         log.error("Ошибка валидации: {}", e.getMessage());
-        return Map.of("error", e.getMessage() != null ? e.getMessage() : "Ошибка валидации");
+        return Map.of(ERROR_KEY, e.getMessage() != null ? e.getMessage() : "Ошибка валидации");
     }
 
     @ExceptionHandler(NotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public Map<String, String> handleNotFound(final NotFoundException e) {
         log.error("Объект не найден: {}", e.getMessage());
-        return Map.of("error", e.getMessage() != null ? e.getMessage() : "Объект не найден");
+        return Map.of(ERROR_KEY, e.getMessage() != null ? e.getMessage() : "Объект не найден");
     }
 
     @ExceptionHandler(Throwable.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Map<String, String> handleThrowable(final Throwable e) {
         log.error("Произошла непредвиденная ошибка: ", e);
-        return Map.of("error", "Произошла непредвиденная ошибка.");
+        return Map.of(ERROR_KEY, "Произошла непредвиденная ошибка.");
     }
 }

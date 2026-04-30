@@ -7,8 +7,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
 @Data
 @Builder
@@ -16,8 +16,6 @@ import java.util.Set;
 @AllArgsConstructor
 public class User {
     public static final String LOGIN_REGEX = "^\\S+$";
-    @Builder.Default
-    private final Set<Long> friends = new HashSet<>();
     private Long id;
     @NotBlank(message = "Электронная почта не может быть пустой")
     @Email(message = "Некорректный формат электронной почты")
@@ -28,4 +26,6 @@ public class User {
     private String name;
     @PastOrPresent(message = "Дата рождения не может быть в будущем")
     private LocalDate birthday;
+    @Builder.Default
+    private final Map<Long, FriendshipStatus> friendships = new HashMap<>();
 }
