@@ -49,7 +49,7 @@ public class FilmService {
         return filmStorage.findAll().stream()
                 .sorted(Comparator.comparingInt((Film f) -> f.getLikes().size()).reversed()) // Сортировка по убыванию
                 .limit(count)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private Film getFilmOrThrow(Long id) {

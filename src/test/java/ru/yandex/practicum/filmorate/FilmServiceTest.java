@@ -3,6 +3,8 @@ package ru.yandex.practicum.filmorate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.MpaRating;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.FilmService;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
@@ -10,7 +12,9 @@ import ru.yandex.practicum.filmorate.storage.film.InMemoryFilmStorage;
 import ru.yandex.practicum.filmorate.storage.user.InMemoryUserStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -28,7 +32,7 @@ class FilmServiceTest {
 
     @Test
     void shouldAddLikeAndSortByPopularity() {
-        Film film1 = filmStorage.add(Film.builder().name("Film 1").build());
+        filmStorage.add(Film.builder().name("Film 1").build());
         Film film2 = filmStorage.add(Film.builder().name("Film 2").build());
         User user = userStorage.add(User.builder().email("u@m.ru").login("u").build());
 
@@ -61,5 +65,24 @@ class FilmServiceTest {
         filmService.addLike(film.getId(), user.getId());
 
         assertEquals(1, film.getLikes().size(), "Количество лайков не должно увеличиваться при повторе");
+    }
+
+    @Test
+    void shouldCreateFilmWithGenresAndMpa() {
+        Film film = Film.builder()
+                .name("New Film")
+                .description("Description")
+                .releaseDate(LocalDate.now())
+                .duration(100)
+                .mpaRating(MpaRating.G)
+                .genres(Set.of(Genre.ACTION, Genre.COMEDY))
+                .build();
+
+        Film created = filmService.create(film);
+
+        assertNotNull(created.getMpaRating());
+        assertEquals(MpaRating.G, created.getMpaRating());
+        assertEquals(2, created.getGenres().size());
+        assertTrue(created.getGenres().contains(Genre.ACTION));
     }
 }

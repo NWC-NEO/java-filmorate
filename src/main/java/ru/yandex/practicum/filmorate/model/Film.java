@@ -16,8 +16,6 @@ import java.util.Set;
 @AllArgsConstructor
 public class Film {
     public static final int MAX_DESCRIPTION_LENGTH = 200;
-    @Builder.Default
-    private final Set<Long> likes = new HashSet<>();
     private Long id;
     @NotBlank(message = "Название не может быть пустым")
     private String name;
@@ -26,4 +24,9 @@ public class Film {
     private LocalDate releaseDate;
     @Positive(message = "Продолжительность фильма должна быть положительной")
     private int duration;
+    private MpaRating mpaRating;
+    @Builder.Default
+    private Set<Genre> genres = new HashSet<>();
+    @Builder.Default
+    private final Set<Long> likes = new HashSet<>();
 }
