@@ -5,8 +5,7 @@ import lombok.*;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@EqualsAndHashCode(of = "id")
-public class Genre {
+public class Mpa {
     private Integer id;
     private String name;
 }

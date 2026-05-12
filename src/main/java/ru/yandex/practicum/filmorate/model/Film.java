@@ -7,8 +7,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
+
 
 @Data
 @Builder
@@ -21,12 +22,12 @@ public class Film {
     private String name;
     @Size(max = MAX_DESCRIPTION_LENGTH, message = "Максимальная длина описания - " + MAX_DESCRIPTION_LENGTH)
     private String description;
+    @NotNull(message = "Дата релиза обязательна")
     private LocalDate releaseDate;
     @Positive(message = "Продолжительность фильма должна быть положительной")
-    private int duration;
-    private MpaRating mpaRating;
+    private Integer duration;
+    @NotNull(message = "MPA рейтинг обязателен")
+    private Mpa mpa;
     @Builder.Default
-    private Set<Genre> genres = new HashSet<>();
-    @Builder.Default
-    private final Set<Long> likes = new HashSet<>();
+    private List<Genre> genres = new ArrayList<>();
 }
