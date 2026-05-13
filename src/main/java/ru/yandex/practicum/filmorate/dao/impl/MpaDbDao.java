@@ -14,17 +14,18 @@ import java.util.Optional;
 @Repository
 @RequiredArgsConstructor
 public class MpaDbDao implements MpaDao {
+    private static final String FIND_ALL_SQL = "SELECT * FROM mpa_ratings ORDER BY id";
+    private static final String FIND_BY_ID_SQL = "SELECT * FROM mpa_ratings WHERE id = ?";
     private final JdbcTemplate jdbcTemplate;
 
     @Override
     public List<Mpa> findAll() {
-        return jdbcTemplate.query("SELECT * FROM mpa_ratings ORDER BY id", this::mapRowToMpa);
+        return jdbcTemplate.query(FIND_ALL_SQL, this::mapRowToMpa);
     }
 
     @Override
     public Optional<Mpa> findById(Integer id) {
-        String sql = "SELECT * FROM mpa_ratings WHERE id = ?";
-        return jdbcTemplate.query(sql, this::mapRowToMpa, id).stream().findFirst();
+        return jdbcTemplate.query(FIND_BY_ID_SQL, this::mapRowToMpa, id).stream().findFirst();
     }
 
     private Mpa mapRowToMpa(ResultSet rs, int rowNum) throws SQLException {

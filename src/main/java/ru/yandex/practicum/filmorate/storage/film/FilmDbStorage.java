@@ -25,17 +25,41 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class FilmDbStorage implements FilmStorage {
 
+    private static final String INSERT_FILM_SQL = "INSERT INTO films (name, description, release_date, " +
+            "duration, mpa_rating_id) VALUES (?, ?, ?, ?, ?)";
+
+    private static final String UPDATE_FILM_SQL = "UPDATE films SET name = ?, description = ?, " +
+            "release_date = ?, duration = ?, mpa_rating_id = ? WHERE id = ?";
+
+    private static final String DELETE_FILM_SQL = "DELETE FROM films WHERE id = ?";
+
+    private static final String FIND_ALL_SQL = "SELECT f.*, m.name AS mpa_name FROM films f " +
+            "JOIN mpa_ratings m ON f.mpa_rating_id = m.id ORDER BY f.id";
+
+    private static final String FIND_BY_ID_SQL = "SELECT f.*, m.name AS mpa_name FROM films f " +
+            "JOIN mpa_ratings m ON f.mpa_rating_id = m.id WHERE f.id = ?";
+
+    private static final String DELETE_GENRES_SQL = "DELETE FROM film_genres WHERE film_id = ?";
+
+    private static final String INSERT_GENRE_SQL = "INSERT INTO film_genres (film_id, genre_id) VALUES (?, ?)";
+
+    private static final String FIND_GENRES_BY_FILM_IDS_SQL = "SELECT fg.film_id, g.id, g.name " +
+            "FROM genres g " +
+            "JOIN film_genres fg ON g.id = fg.genre_id " +
+            "WHERE fg.film_id IN (%s)";
+
+    private static final String FIND_GENRES_BY_ID_SQL = "SELECT g.* FROM genres g " +
+            "JOIN film_genres fg ON g.id = fg.genre_id WHERE fg.film_id = ?";
+
     private final JdbcTemplate jdbcTemplate;
 
     @Override
     public Film add(Film film) {
 
-        String sqlQuery = "INSERT INTO films (name, description, release_date, duration, mpa_rating_id) " +
-                "VALUES (?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
         jdbcTemplate.update(connection -> {
-            PreparedStatement stmt = connection.prepareStatement(sqlQuery, new String[]{"id"});
+            PreparedStatement stmt = connection.prepareStatement(INSERT_FILM_SQL, new String[]{"id"});
             stmt.setString(1, film.getName());
             stmt.setString(2, film.getDescription());
             stmt.setDate(3, Date.valueOf(film.getReleaseDate()));
@@ -53,10 +77,8 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public Film update(Film film) {
-        String sqlQuery = "UPDATE films SET name = ?, description = ?, release_date = ?, " +
-                "duration = ?, mpa_rating_id = ? WHERE id = ?";
 
-        int rowsAffected = jdbcTemplate.update(sqlQuery,
+        int rowsAffected = jdbcTemplate.update(UPDATE_FILM_SQL,
                 film.getName(),
                 film.getDescription(),
                 Date.valueOf(film.getReleaseDate()),
@@ -68,7 +90,7 @@ public class FilmDbStorage implements FilmStorage {
             throw new NotFoundException("Фильм с id " + film.getId() + " не найден"); // Пункт 4
         }
 
-        jdbcTemplate.update("DELETE FROM film_genres WHERE film_id = ?", film.getId());
+        jdbcTemplate.update(DELETE_GENRES_SQL, film.getId());
         saveGenres(film);
 
         return findById(film.getId()).get();
@@ -76,21 +98,17 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public void delete(Long id) {
-        jdbcTemplate.update("DELETE FROM films WHERE id = ?", id);
+        jdbcTemplate.update(DELETE_FILM_SQL, id);
     }
 
     @Override
     public Collection<Film> findAll() {
-        String sqlQuery = "SELECT f.*, m.name AS mpa_name FROM films f " +
-                "JOIN mpa_ratings m ON f.mpa_rating_id = m.id ORDER BY f.id";
-        return jdbcTemplate.query(sqlQuery, this::mapRowToFilm);
+        return jdbcTemplate.query(FIND_ALL_SQL, this::mapRowToFilm);
     }
 
     @Override
     public Optional<Film> findById(Long id) {
-        String sqlQuery = "SELECT f.*, m.name AS mpa_name FROM films f " +
-                "JOIN mpa_ratings m ON f.mpa_rating_id = m.id WHERE f.id = ?";
-        List<Film> films = jdbcTemplate.query(sqlQuery, this::mapRowToFilm, id);
+        List<Film> films = jdbcTemplate.query(FIND_BY_ID_SQL, this::mapRowToFilm, id);
         return films.stream().findFirst();
     }
 
@@ -98,13 +116,12 @@ public class FilmDbStorage implements FilmStorage {
         if (film.getGenres() == null || film.getGenres().isEmpty()) {
             return;
         }
-        String sql = "INSERT INTO film_genres (film_id, genre_id) VALUES (?, ?)";
 
         List<Genre> uniqueGenres = film.getGenres().stream()
                 .distinct()
                 .collect(Collectors.toList());
 
-        jdbcTemplate.batchUpdate(sql, uniqueGenres, uniqueGenres.size(),
+        jdbcTemplate.batchUpdate(INSERT_GENRE_SQL, uniqueGenres, uniqueGenres.size(),
                 (ps, genre) -> {
                     ps.setLong(1, film.getId());
                     ps.setInt(2, genre.getId());
@@ -121,10 +138,7 @@ public class FilmDbStorage implements FilmStorage {
                 .map(String::valueOf)
                 .collect(Collectors.joining(", "));
 
-        String sql = "SELECT fg.film_id, g.id, g.name " +
-                "FROM genres g " +
-                "JOIN film_genres fg ON g.id = fg.genre_id " +
-                "WHERE fg.film_id IN (" + inSql + ")";
+        String sql = String.format(FIND_GENRES_BY_FILM_IDS_SQL, inSql);
 
         Map<Long, List<Genre>> genresMap = new HashMap<>();
         jdbcTemplate.query(sql, rs -> {
@@ -153,8 +167,7 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     private List<Genre> getGenresByFilmId(Long filmId) {
-        String sql = "SELECT g.* FROM genres g JOIN film_genres fg ON g.id = fg.genre_id WHERE fg.film_id = ?";
-        return jdbcTemplate.query(sql, (rs, rowNum) ->
+        return jdbcTemplate.query(FIND_GENRES_BY_ID_SQL, (rs, rowNum) ->
                 new Genre(rs.getInt("id"), rs.getString("name")), filmId);
     }
 }

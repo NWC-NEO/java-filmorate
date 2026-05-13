@@ -29,6 +29,19 @@ public class FilmService {
     private static final LocalDate CINEMA_BIRTHDAY = LocalDate.of(1895, 12, 28);
     private static final String NOT_FOUND_SUFFIX = " не найден";
 
+    private static final String ADD_LIKE_SQL = "MERGE INTO film_likes (film_id, user_id) VALUES (?, ?)";
+
+    private static final String REMOVE_LIKE_SQL = "DELETE FROM film_likes WHERE film_id = ? AND user_id = ?";
+
+    private static final String GET_POPULAR_SQL = "SELECT f.*, m.name AS mpa_name, " +
+            "COUNT(l.user_id) AS like_count " +
+            "FROM films f " +
+            "LEFT JOIN mpa_ratings m ON f.mpa_rating_id = m.id " +
+            "LEFT JOIN film_likes l ON f.id = l.film_id " +
+            "GROUP BY f.id " +
+            "ORDER BY like_count DESC " +
+            "LIMIT ?";
+
     private final FilmStorage filmStorage;
     private final UserService userService;
     private final JdbcTemplate jdbcTemplate;
@@ -38,26 +51,17 @@ public class FilmService {
     public void addLike(Long filmId, Long userId) {
         getFilmOrThrow(filmId);
         userService.findById(userId);
-        String sql = "MERGE INTO film_likes (film_id, user_id) VALUES (?, ?)";
-        jdbcTemplate.update(sql, filmId, userId);
+        jdbcTemplate.update(ADD_LIKE_SQL, filmId, userId);
         log.info("Пользователь {} поставил лайк фильму {}", userId, filmId);
     }
 
     public void removeLike(Long filmId, Long userId) {
-        String sql = "DELETE FROM film_likes WHERE film_id = ? AND user_id = ?";
-        jdbcTemplate.update(sql, filmId, userId);
+        jdbcTemplate.update(REMOVE_LIKE_SQL, filmId, userId);
     }
 
     public List<Film> getPopular(int count) {
-        String sql = "SELECT f.*, m.name AS mpa_name, COUNT(l.user_id) AS like_count " +
-                "FROM films f " +
-                "LEFT JOIN mpa_ratings m ON f.mpa_rating_id = m.id " +
-                "LEFT JOIN film_likes l ON f.id = l.film_id " +
-                "GROUP BY f.id " +
-                "ORDER BY like_count DESC " +
-                "LIMIT ?";
 
-        List<Film> popularFilms = jdbcTemplate.query(sql, (rs, rowNum) -> Film.builder()
+        List<Film> popularFilms = jdbcTemplate.query(GET_POPULAR_SQL, (rs, rowNum) -> Film.builder()
                 .id(rs.getLong("id"))
                 .name(rs.getString("name"))
                 .description(rs.getString("description"))

@@ -22,15 +22,26 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class UserDbStorage implements UserStorage {
 
+    private static final String INSERT_USER_SQL = "INSERT INTO users (email, login, name, birthday) " +
+            "VALUES (?, ?, ?, ?)";
+
+    private static final String UPDATE_USER_SQL = "UPDATE users SET email = ?, login = ?, name = ?, birthday = ? " +
+            "WHERE id = ?";
+
+    private static final String DELETE_USER_SQL = "DELETE FROM users WHERE id = ?";
+
+    private static final String FIND_ALL_SQL = "SELECT * FROM users";
+
+    private static final String FIND_BY_ID_SQL = "SELECT * FROM users WHERE id = ?";
+
     private final JdbcTemplate jdbcTemplate;
 
     @Override
     public User add(User user) {
-        String sql = "INSERT INTO users (email, login, name, birthday) VALUES (?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
         jdbcTemplate.update(connection -> {
-            PreparedStatement ps = connection.prepareStatement(sql, new String[]{"id"});
+            PreparedStatement ps = connection.prepareStatement(INSERT_USER_SQL, new String[]{"id"});
             ps.setString(1, user.getEmail());
             ps.setString(2, user.getLogin());
             ps.setString(3, user.getName());
@@ -45,8 +56,7 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public User update(User user) {
-        String sql = "UPDATE users SET email = ?, login = ?, name = ?, birthday = ? WHERE id = ?";
-        int rows = jdbcTemplate.update(sql, user.getEmail(), user.getLogin(),
+        int rows = jdbcTemplate.update(UPDATE_USER_SQL, user.getEmail(), user.getLogin(),
                 user.getName(), user.getBirthday(), user.getId());
         if (rows == 0) return null;
         return user;
@@ -54,18 +64,17 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public void delete(Long id) {
-        jdbcTemplate.update("DELETE FROM users WHERE id = ?", id);
+        jdbcTemplate.update(DELETE_USER_SQL, id);
     }
 
     @Override
     public Collection<User> findAll() {
-        return jdbcTemplate.query("SELECT * FROM users", this::mapRowToUser);
+        return jdbcTemplate.query(FIND_ALL_SQL, this::mapRowToUser);
     }
 
     @Override
     public Optional<User> findById(Long id) {
-        String sql = "SELECT * FROM users WHERE id = ?";
-        return jdbcTemplate.query(sql, this::mapRowToUser, id).stream().findFirst();
+        return jdbcTemplate.query(FIND_BY_ID_SQL, this::mapRowToUser, id).stream().findFirst();
     }
 
     private User mapRowToUser(ResultSet rs, int rowNum) throws SQLException {

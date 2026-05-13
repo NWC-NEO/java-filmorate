@@ -16,6 +16,14 @@ import java.util.List;
 @Slf4j
 @RequiredArgsConstructor
 public class UserService {
+    private static final String ADD_FRIEND_SQL = "MERGE INTO friendships (user_id, friend_id) VALUES (?, ?)";
+    private static final String REMOVE_FRIEND_SQL = "DELETE FROM friendships WHERE user_id = ? AND friend_id = ?";
+    private static final String GET_FRIENDS_SQL = "SELECT u.* FROM users u " +
+            "JOIN friendships f ON u.id = f.friend_id WHERE f.user_id = ?";
+    private static final String GET_COMMON_FRIENDS_SQL = "SELECT u.* FROM users u " +
+            "JOIN friendships f1 ON u.id = f1.friend_id " +
+            "JOIN friendships f2 ON u.id = f2.friend_id " +
+            "WHERE f1.user_id = ? AND f2.user_id = ?";
     private final UserStorage userStorage;
     private final JdbcTemplate jdbcTemplate;
 
@@ -26,8 +34,7 @@ public class UserService {
         getUserOrThrow(userId);
         getUserOrThrow(friendId);
 
-        String sql = "MERGE INTO friendships (user_id, friend_id) VALUES (?, ?)";
-        jdbcTemplate.update(sql, userId, friendId);
+        jdbcTemplate.update(ADD_FRIEND_SQL, userId, friendId);
         log.info("Пользователь {} добавил в друзья {}", userId, friendId);
     }
 
@@ -35,8 +42,7 @@ public class UserService {
         getUserOrThrow(userId);
         getUserOrThrow(friendId);
 
-        String sql = "DELETE FROM friendships WHERE user_id = ? AND friend_id = ?";
-        int deleted = jdbcTemplate.update(sql, userId, friendId);
+        int deleted = jdbcTemplate.update(REMOVE_FRIEND_SQL, userId, friendId);
 
         if (deleted > 0) {
             log.info("Пользователь {} удалил из друзей {}", userId, friendId);
@@ -47,8 +53,7 @@ public class UserService {
 
     public List<User> getFriends(Long userId) {
         getUserOrThrow(userId);
-        String sql = "SELECT u.* FROM users u JOIN friendships f ON u.id = f.friend_id WHERE f.user_id = ?";
-        return jdbcTemplate.query(sql, (rs, rowNum) -> User.builder()
+        return jdbcTemplate.query(GET_FRIENDS_SQL, (rs, rowNum) -> User.builder()
                 .id(rs.getLong("id"))
                 .email(rs.getString("email"))
                 .login(rs.getString("login"))
@@ -58,11 +63,8 @@ public class UserService {
     }
 
     public List<User> getCommonFriends(Long id, Long otherId) {
-        String sql = "SELECT u.* FROM users u " +
-                "JOIN friendships f1 ON u.id = f1.friend_id " +
-                "JOIN friendships f2 ON u.id = f2.friend_id " +
-                "WHERE f1.user_id = ? AND f2.user_id = ?";
-        return jdbcTemplate.query(sql, (rs, rowNum) -> User.builder()
+
+        return jdbcTemplate.query(GET_COMMON_FRIENDS_SQL, (rs, rowNum) -> User.builder()
                 .id(rs.getLong("id"))
                 .email(rs.getString("email"))
                 .login(rs.getString("login"))

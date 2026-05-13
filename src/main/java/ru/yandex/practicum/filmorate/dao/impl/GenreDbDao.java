@@ -14,17 +14,18 @@ import java.util.Optional;
 @Repository
 @RequiredArgsConstructor
 public class GenreDbDao implements GenreDao {
+    private static final String FIND_ALL_SQL = "SELECT * FROM genres ORDER BY id";
+    private static final String FIND_BY_ID_SQL = "SELECT * FROM genres WHERE id = ?";
     private final JdbcTemplate jdbcTemplate;
 
     @Override
     public List<Genre> findAll() {
-        return jdbcTemplate.query("SELECT * FROM genres ORDER BY id", this::mapRowToGenre);
+        return jdbcTemplate.query(FIND_ALL_SQL, this::mapRowToGenre);
     }
 
     @Override
     public Optional<Genre> findById(Integer id) {
-        String sql = "SELECT * FROM genres WHERE id = ?";
-        return jdbcTemplate.query(sql, this::mapRowToGenre, id).stream().findFirst();
+        return jdbcTemplate.query(FIND_BY_ID_SQL, this::mapRowToGenre, id).stream().findFirst();
     }
 
     private Genre mapRowToGenre(ResultSet rs, int rowNum) throws SQLException {
