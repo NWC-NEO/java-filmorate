@@ -51,6 +51,15 @@ public class FilmDbStorage implements FilmStorage {
     private static final String FIND_GENRES_BY_ID_SQL = "SELECT g.* FROM genres g " +
             "JOIN film_genres fg ON g.id = fg.genre_id WHERE fg.film_id = ?";
 
+    private static final String ADD_LIKE_SQL = "MERGE INTO film_likes (film_id, user_id) VALUES (?, ?)";
+
+    private static final String REMOVE_LIKE_SQL = "DELETE FROM film_likes WHERE film_id = ? AND user_id = ?";
+
+    private static final String GET_POPULAR_SQL = "SELECT f.*, m.name AS mpa_name, COUNT(l.user_id) AS like_count " +
+            "FROM films f LEFT JOIN mpa_ratings m ON f.mpa_rating_id = m.id " +
+            "LEFT JOIN film_likes l ON f.id = l.film_id GROUP BY f.id " +
+            "ORDER BY like_count DESC LIMIT ?";
+
     private final JdbcTemplate jdbcTemplate;
 
     @Override
@@ -93,7 +102,8 @@ public class FilmDbStorage implements FilmStorage {
         jdbcTemplate.update(DELETE_GENRES_SQL, film.getId());
         saveGenres(film);
 
-        return findById(film.getId()).get();
+        return findById(film.getId())
+                .orElseThrow(() -> new NotFoundException("Ошибка при обновлении: фильм с id " + film.getId() + " пропал"));
     }
 
     @Override
@@ -119,7 +129,7 @@ public class FilmDbStorage implements FilmStorage {
 
         List<Genre> uniqueGenres = film.getGenres().stream()
                 .distinct()
-                .collect(Collectors.toList());
+                .toList();
 
         jdbcTemplate.batchUpdate(INSERT_GENRE_SQL, uniqueGenres, uniqueGenres.size(),
                 (ps, genre) -> {
@@ -169,5 +179,20 @@ public class FilmDbStorage implements FilmStorage {
     private List<Genre> getGenresByFilmId(Long filmId) {
         return jdbcTemplate.query(FIND_GENRES_BY_ID_SQL, (rs, rowNum) ->
                 new Genre(rs.getInt("id"), rs.getString("name")), filmId);
+    }
+
+    @Override
+    public void addLike(Long filmId, Long userId) {
+        jdbcTemplate.update(ADD_LIKE_SQL, filmId, userId);
+    }
+
+    @Override
+    public void removeLike(Long filmId, Long userId) {
+        jdbcTemplate.update(REMOVE_LIKE_SQL, filmId, userId);
+    }
+
+    @Override
+    public List<Film> getPopular(int count) {
+        return jdbcTemplate.query(GET_POPULAR_SQL, this::mapRowToFilm, count);
     }
 }

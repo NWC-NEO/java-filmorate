@@ -49,4 +49,21 @@ public class InMemoryFilmStorage implements FilmStorage {
                         id -> films.get(id).getGenres()
                 ));
     }
+
+    // --- Заглушки для совместимости с обновлённым интерфейсом ---
+
+    @Override
+    public void addLike(Long filmId, Long userId) {
+        throw new UnsupportedOperationException("Метод addLike не реализован в InMemoryStorage");
+    }
+
+    @Override
+    public void removeLike(Long filmId, Long userId) {
+        throw new UnsupportedOperationException("Метод removeLike не реализован в InMemoryStorage");
+    }
+
+    @Override
+    public List<Film> getPopular(int count) {
+        throw new UnsupportedOperationException("Метод getPopular не реализован в InMemoryStorage");
+    }
 }

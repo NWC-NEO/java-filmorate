@@ -14,6 +14,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -33,6 +34,18 @@ public class UserDbStorage implements UserStorage {
     private static final String FIND_ALL_SQL = "SELECT * FROM users";
 
     private static final String FIND_BY_ID_SQL = "SELECT * FROM users WHERE id = ?";
+
+    private static final String ADD_FRIEND_SQL = "MERGE INTO friendships (user_id, friend_id) VALUES (?, ?)";
+
+    private static final String REMOVE_FRIEND_SQL = "DELETE FROM friendships WHERE user_id = ? AND friend_id = ?";
+
+    private static final String GET_FRIENDS_SQL = "SELECT u.* FROM users u " +
+            "JOIN friendships f ON u.id = f.friend_id WHERE f.user_id = ?";
+
+    private static final String GET_COMMON_FRIENDS_SQL = "SELECT u.* FROM users u " +
+            "JOIN friendships f1 ON u.id = f1.friend_id " +
+            "JOIN friendships f2 ON u.id = f2.friend_id " +
+            "WHERE f1.user_id = ? AND f2.user_id = ?";
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -85,5 +98,26 @@ public class UserDbStorage implements UserStorage {
                 .name(rs.getString("name"))
                 .birthday(rs.getDate("birthday").toLocalDate())
                 .build();
+    }
+
+    @Override
+    public void addFriend(Long userId, Long friendId) {
+        jdbcTemplate.update(ADD_FRIEND_SQL, userId, friendId);
+    }
+
+    @Override
+    public boolean removeFriend(Long userId, Long friendId) {
+        int rowsAffected = jdbcTemplate.update(REMOVE_FRIEND_SQL, userId, friendId);
+        return rowsAffected > 0;
+    }
+
+    @Override
+    public List<User> getFriends(Long userId) {
+        return jdbcTemplate.query(GET_FRIENDS_SQL, this::mapRowToUser, userId);
+    }
+
+    @Override
+    public List<User> getCommonFriends(Long userId, Long otherId) {
+        return jdbcTemplate.query(GET_COMMON_FRIENDS_SQL, this::mapRowToUser, userId, otherId);
     }
 }
