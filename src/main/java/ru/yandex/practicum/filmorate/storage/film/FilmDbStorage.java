@@ -8,14 +8,12 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.mapper.FilmMapper;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.model.Mpa;
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -61,6 +59,7 @@ public class FilmDbStorage implements FilmStorage {
             "ORDER BY like_count DESC LIMIT ?";
 
     private final JdbcTemplate jdbcTemplate;
+    private final FilmMapper filmMapper;
 
     @Override
     public Film add(Film film) {
@@ -113,12 +112,15 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public Collection<Film> findAll() {
-        return jdbcTemplate.query(FIND_ALL_SQL, this::mapRowToFilm);
+        List<Film> films = jdbcTemplate.query(FIND_ALL_SQL, filmMapper);
+        loadGenres(films);
+        return films;
     }
 
     @Override
     public Optional<Film> findById(Long id) {
-        List<Film> films = jdbcTemplate.query(FIND_BY_ID_SQL, this::mapRowToFilm, id);
+        List<Film> films = jdbcTemplate.query(FIND_BY_ID_SQL, filmMapper, id);
+        loadGenres(films);
         return films.stream().findFirst();
     }
 
@@ -160,20 +162,9 @@ public class FilmDbStorage implements FilmStorage {
         return genresMap;
     }
 
-    private Film mapRowToFilm(ResultSet rs, int rowNum) throws SQLException {
-        java.sql.Date releaseDate = rs.getDate("release_date");
-
-        Film film = Film.builder()
-                .id(rs.getLong("id"))
-                .name(rs.getString("name"))
-                .description(rs.getString("description"))
-                .releaseDate(releaseDate != null ? releaseDate.toLocalDate() : null)
-                .duration(rs.getInt("duration"))
-                .mpa(new Mpa(rs.getInt("mpa_rating_id"), rs.getString("mpa_name")))
-                .build();
-
-        film.setGenres(getGenresByFilmId(film.getId()));
-        return film;
+    private void loadGenres(List<Film> films) {
+        if (films.isEmpty()) return;
+        films.forEach(film -> film.setGenres(getGenresByFilmId(film.getId())));
     }
 
     private List<Genre> getGenresByFilmId(Long filmId) {
@@ -193,6 +184,8 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public List<Film> getPopular(int count) {
-        return jdbcTemplate.query(GET_POPULAR_SQL, this::mapRowToFilm, count);
+        List<Film> films = jdbcTemplate.query(GET_POPULAR_SQL, filmMapper, count);
+        loadGenres(films);
+        return films;
     }
 }

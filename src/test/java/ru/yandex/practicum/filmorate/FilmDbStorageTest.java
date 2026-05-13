@@ -10,6 +10,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.jdbc.Sql;
 import ru.yandex.practicum.filmorate.dao.impl.GenreDbDao;
 import ru.yandex.practicum.filmorate.dao.impl.MpaDbDao;
+import ru.yandex.practicum.filmorate.mapper.FilmMapper;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
@@ -37,7 +38,8 @@ class FilmDbStorageTest {
     void setUp() {
         mpaDao = new MpaDbDao(jdbcTemplate);
         genreDao = new GenreDbDao(jdbcTemplate);
-        filmStorage = new FilmDbStorage(jdbcTemplate);
+        FilmMapper filmMapper = new FilmMapper();
+        filmStorage = new FilmDbStorage(jdbcTemplate, filmMapper);
     }
 
     @Test

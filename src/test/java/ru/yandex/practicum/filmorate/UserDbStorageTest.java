@@ -8,6 +8,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.jdbc.Sql;
+import ru.yandex.practicum.filmorate.mapper.UserMapper;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserDbStorage;
 
@@ -27,7 +28,8 @@ class UserDbStorageTest {
 
     @BeforeEach
     void setUp() {
-        userStorage = new UserDbStorage(jdbcTemplate);
+        UserMapper userMapper = new UserMapper();
+        userStorage = new UserDbStorage(jdbcTemplate, userMapper);
     }
 
     @Test

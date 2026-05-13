@@ -7,12 +7,11 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.mapper.UserMapper;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -48,6 +47,7 @@ public class UserDbStorage implements UserStorage {
             "WHERE f1.user_id = ? AND f2.user_id = ?";
 
     private final JdbcTemplate jdbcTemplate;
+    private final UserMapper userMapper;
 
     @Override
     public User add(User user) {
@@ -82,22 +82,12 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public Collection<User> findAll() {
-        return jdbcTemplate.query(FIND_ALL_SQL, this::mapRowToUser);
+        return jdbcTemplate.query(FIND_ALL_SQL, userMapper);
     }
 
     @Override
     public Optional<User> findById(Long id) {
-        return jdbcTemplate.query(FIND_BY_ID_SQL, this::mapRowToUser, id).stream().findFirst();
-    }
-
-    private User mapRowToUser(ResultSet rs, int rowNum) throws SQLException {
-        return User.builder()
-                .id(rs.getLong("id"))
-                .email(rs.getString("email"))
-                .login(rs.getString("login"))
-                .name(rs.getString("name"))
-                .birthday(rs.getDate("birthday").toLocalDate())
-                .build();
+        return jdbcTemplate.query(FIND_BY_ID_SQL, userMapper, id).stream().findFirst();
     }
 
     @Override
@@ -113,11 +103,11 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public List<User> getFriends(Long userId) {
-        return jdbcTemplate.query(GET_FRIENDS_SQL, this::mapRowToUser, userId);
+        return jdbcTemplate.query(GET_FRIENDS_SQL, userMapper, userId);
     }
 
     @Override
     public List<User> getCommonFriends(Long userId, Long otherId) {
-        return jdbcTemplate.query(GET_COMMON_FRIENDS_SQL, this::mapRowToUser, userId, otherId);
+        return jdbcTemplate.query(GET_COMMON_FRIENDS_SQL, userMapper, userId, otherId);
     }
 }
