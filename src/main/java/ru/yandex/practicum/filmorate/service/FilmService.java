@@ -115,7 +115,7 @@ public class FilmService {
 
     private void validateFilm(Film film) {
         if (film.getReleaseDate() != null && film.getReleaseDate().isBefore(CINEMA_BIRTHDAY)) {
-            log.warn("Валидация не пройдена: дата релиза фильма раньше {}", CINEMA_BIRTHDAY);
+            log.error("Валидация не пройдена: дата релиза фильма раньше {}", CINEMA_BIRTHDAY);
             throw new ValidationException("Дата релиза не может быть раньше " + CINEMA_BIRTHDAY);
         }
     }
