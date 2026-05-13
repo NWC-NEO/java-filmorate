@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
-import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 
@@ -16,7 +15,6 @@ import java.util.List;
 @Slf4j
 @RequiredArgsConstructor
 public class FilmController {
-    private static final LocalDate CINEMA_BIRTHDAY = LocalDate.of(1895, 12, 28);
     private final FilmService filmService;
 
     @GetMapping

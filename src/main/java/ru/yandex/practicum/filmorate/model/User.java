@@ -7,8 +7,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.Map;
 
 @Data
 @Builder
@@ -26,6 +24,4 @@ public class User {
     private String name;
     @PastOrPresent(message = "Дата рождения не может быть в будущем")
     private LocalDate birthday;
-    @Builder.Default
-    private final Map<Long, FriendshipStatus> friendships = new HashMap<>();
 }
